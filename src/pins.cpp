@@ -1,0 +1,40 @@
+#include "pins.h"
+#include <Arduino.h>
+
+// Set pin modes
+void setupPins() {
+  pinMode(BOILER_RELAY_PIN, OUTPUT);
+  pinMode(UFH_VALVE_PUMP_PIN, OUTPUT);
+  pinMode(KITCHEN_UFH_VALVE_PIN, OUTPUT);
+  pinMode(UTILITY_UFH_VALVE_PIN, OUTPUT);
+  pinMode(RADS_VALVE_PIN, OUTPUT);
+  pinMode(TRANSFORMER_24V_ENABLE_PIN, OUTPUT);
+  pinMode(BATHROOM_RAD_24V_PIN, OUTPUT);
+  pinMode(BATHROOM_TOWEL_24V_PIN, OUTPUT);
+  pinMode(ENSUITE_TOWEL_24V_PIN, OUTPUT);
+  pinMode(IMMERSION_RELAY_PIN, OUTPUT);
+  pinMode(BASEMENT_RAD_ZONE_PIN, OUTPUT);
+  pinMode(LOUNGE_RAD_ZONE_PIN, OUTPUT);
+  pinMode(FRONT_BEDROOM_RAD_ZONE_PIN, OUTPUT);
+  pinMode(BACK_BEDROOM_RAD_ZONE_PIN, OUTPUT);
+  pinMode(OFFICE_RAD_ZONE_PIN, OUTPUT);
+  pinMode(MASTER_BEDROOM_RAD_ZONE_PIN, OUTPUT);
+
+  // Ensure all outputs OFF on boot (assume active-LOW relays -> HIGH = off, LOW = on)
+  digitalWrite(BOILER_RELAY_PIN, HIGH);
+  digitalWrite(UFH_VALVE_PUMP_PIN, HIGH);
+  digitalWrite(KITCHEN_UFH_VALVE_PIN, HIGH);
+  digitalWrite(UTILITY_UFH_VALVE_PIN, HIGH);
+  digitalWrite(RADS_VALVE_PIN, HIGH);
+  digitalWrite(TRANSFORMER_24V_ENABLE_PIN, HIGH);
+  digitalWrite(BATHROOM_RAD_24V_PIN, HIGH);
+  digitalWrite(BATHROOM_TOWEL_24V_PIN, HIGH);
+  digitalWrite(ENSUITE_TOWEL_24V_PIN, HIGH);
+  digitalWrite(IMMERSION_RELAY_PIN, LOW);
+  digitalWrite(BASEMENT_RAD_ZONE_PIN, HIGH);
+  digitalWrite(LOUNGE_RAD_ZONE_PIN, HIGH);
+  digitalWrite(FRONT_BEDROOM_RAD_ZONE_PIN, HIGH);
+  digitalWrite(BACK_BEDROOM_RAD_ZONE_PIN, HIGH);
+  digitalWrite(OFFICE_RAD_ZONE_PIN, HIGH);
+  digitalWrite(MASTER_BEDROOM_RAD_ZONE_PIN, HIGH);
+}
