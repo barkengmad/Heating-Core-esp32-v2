@@ -16,8 +16,8 @@ ESP32-based heating control system with web interface, MQTT integration, and tem
 ### 1. Clone and Configure
 
 ```bash
-git clone <your-repo-url>
-cd heating-core-esp32-v2
+git clone https://github.com/barkengmad/Heating-Core-esp32-v2.git
+cd Heating-Core-esp32-v2
 ```
 
 ### 2. WiFi Configuration
