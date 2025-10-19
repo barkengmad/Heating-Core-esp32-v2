@@ -25,10 +25,7 @@
 #include "pins.h"
 #include "control.h"
 #include "mqtt.h"
-
-// WiFi credentials
-const char* ssid = "4CL-WiFi";
-const char* password = "Y8g*t{)F(Crc";
+#include "config_secret.h"
 
 // Create an AsyncWebServer object on port 80
 AsyncWebServer server(80);
@@ -136,7 +133,7 @@ void setup() {
   WiFi.setHostname("Heating");
 
   // Connect to WiFi
-  WiFi.begin(ssid, password);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");

@@ -4,6 +4,7 @@
 #include <ArduinoJson.h>
 #include "globals.h"
 #include "pins.h"
+#include "config_secret.h"
 
 static AsyncMqttClient mqtt;
 // simple reconnect backoff
@@ -13,8 +14,8 @@ static const char* DEVICE_ID = "heating-core-s2";
 static const char* STATUS_TOPIC = "heating-core-s2/status";
 
 // MQTT broker config (adjust as needed)
-static const char* MQTT_HOST = "192.168.1.10";
-static const uint16_t MQTT_PORT = 1883;
+static const char* MQTT_HOST_ADDR = MQTT_HOST;
+static const uint16_t MQTT_PORT_NUM = MQTT_PORT;
 
 static void connectToMqtt() {
   mqtt.connect();
@@ -260,7 +261,7 @@ void mqttSetup() {
     // reconnect handled by library or timer
   });
   mqtt.onMessage(handleMessage);
-  mqtt.setServer(MQTT_HOST, MQTT_PORT);
+  mqtt.setServer(MQTT_HOST_ADDR, MQTT_PORT_NUM);
   mqtt.setWill(STATUS_TOPIC, 1, true, "offline");
   connectToMqtt();
 }
