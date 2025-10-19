@@ -94,6 +94,16 @@ The device publishes to Home Assistant using MQTT discovery:
 - **Immersion**: Electric immersion heater
 - Each window can use either source independently
 
+## Future Development
+
+### Planned Features
+
+- **Boost Controls**: Add boost buttons to run radiators for 1 hour
+- **Underfloor Boost**: Add boost functionality for underfloor heating zones
+- **Heat Exchange Control**: Relay control with timed boost options (15m, 30m, 1h, 2h)
+- **Room Temperature Monitoring**: Add room thermometer via RS485 and local Arduino
+- **Individual Radiator Control**: Per-radiator zone control
+
 ## Troubleshooting
 
 1. **WiFi Connection**: Check credentials in `config_secret.h`

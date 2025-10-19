@@ -4,11 +4,11 @@
 
 // WiFi credentials - DO NOT COMMIT TO GIT
 // Copy this file to config_secret.h and update with your actual credentials
-const char* WIFI_SSID = "4CL-WiFi";
-const char* WIFI_PASSWORD = "Y8g*t{)F(Crc";
+const char* WIFI_SSID = "YOUR_WIFI_SSID";
+const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
 
-// MQTT broker settings
-const char* MQTT_HOST = "192.168.1.10";
+// MQTT broker settings - Update these in config_secret.h
+const char* MQTT_HOST = "YOUR_MQTT_BROKER_IP";
 const uint16_t MQTT_PORT = 1883;
 
 #endif

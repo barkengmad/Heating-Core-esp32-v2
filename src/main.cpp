@@ -1,14 +1,5 @@
 // main.cpp
 
-/* To Do list
-- Add boost button to run radiators for 1 hour
-- Add boost button to run underfloor in respective
-- Add relay control of Heat Exchange. With selection of timed boosts 15m 30m 1h 2h
-- Add Room Thermometer via rs485 and local arduino
-- Add individual radiator control
-
-*/ 
-
 //Network Related Libraries
 #include <WiFi.h>
 #include <ESPAsyncWebServer.h>
