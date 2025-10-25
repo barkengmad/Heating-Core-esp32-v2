@@ -9,6 +9,7 @@
 namespace WebPages {
   String getMainPageHtml();
   String getConfigPageHtml();
+  String getFirmwarePageHtml();
   void handleRadiatorSchedule(AsyncWebServerRequest *request);
   void handleUnderfloorSchedule(AsyncWebServerRequest *request);
   void handleSetThreshold(AsyncWebServerRequest *request);
@@ -16,6 +17,7 @@ namespace WebPages {
   void handleSetNightWindow(AsyncWebServerRequest *request);
   void handleImmersionSchedule(AsyncWebServerRequest *request);
   void handleImmersionThreshold(AsyncWebServerRequest *request);
+  void handleToggleOutput(AsyncWebServerRequest *request);
   int getHourFromParam(AsyncWebServerRequest *request, const String &paramName);
   int getMinuteFromParam(AsyncWebServerRequest *request, const String &paramName);
   // Add other functions

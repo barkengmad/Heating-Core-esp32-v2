@@ -51,10 +51,8 @@ static void subscribeCommands() {
     "heating-core-s2/switch/bathroom_rad/set",
     "heating-core-s2/switch/bathroom_towel/set",
     "heating-core-s2/switch/ensuite_towel/set",
-    // Optional manual overrides
+    // Optional manual overrides (keep boiler/transformer; rads_main_valve and ufh_mech are AUTO)
     "heating-core-s2/switch/boiler/set",
-    "heating-core-s2/switch/ufh_pump/set",
-    "heating-core-s2/switch/rads_main_valve/set",
     "heating-core-s2/switch/transformer_24v/set",
     // Setpoint
     "heating-core-s2/number/tank2_setpoint/set"
@@ -96,13 +94,13 @@ static void publishDiscoveryForSwitch(const char* name, const char* unique, cons
   mqtt.publish(topic.c_str(), 1, true, buf, n);
 }
 
-static void publishDiscoveryForNumber() {
+static void publishDiscoveryForNumber(const char* name, const char* uniq, const char* cmd_t, const char* stat_t) {
   StaticJsonDocument<512> doc;
   char buf[512];
-  doc["name"] = "Tank2 Setpoint";
-  doc["uniq_id"] = "tank2_setpoint";
-  doc["cmd_t"] = "heating-core-s2/number/tank2_setpoint/set";
-  doc["stat_t"] = "heating-core-s2/number/tank2_setpoint/state";
+  doc["name"] = name;
+  doc["uniq_id"] = uniq;
+  doc["cmd_t"] = cmd_t;
+  doc["stat_t"] = stat_t;
   doc["min"] = 30;
   doc["max"] = 80;
   doc["step"] = 0.5;
@@ -113,7 +111,7 @@ static void publishDiscoveryForNumber() {
   doc["dev"]["mdl"] = "ESP32-S2";
   doc["avty_t"] = STATUS_TOPIC;
   size_t n = serializeJson(doc, buf, sizeof(buf));
-  String topic = String("homeassistant/number/") + DEVICE_ID + "/tank2_setpoint/config";
+  String topic = String("homeassistant/number/") + DEVICE_ID + "/" + uniq + "/config";
   mqtt.publish(topic.c_str(), 1, true, buf, n);
 }
 
@@ -144,13 +142,23 @@ void mqttPublishDiscovery() {
   publishDiscoveryForSwitch("Bathroom Rad 24V", "bathroom_rad", "heating-core-s2/switch/bathroom_rad/set", "heating-core-s2/switch/bathroom_rad/state");
   publishDiscoveryForSwitch("Bathroom Towel 24V", "bathroom_towel", "heating-core-s2/switch/bathroom_towel/set", "heating-core-s2/switch/bathroom_towel/state");
   publishDiscoveryForSwitch("Ensuite Towel 24V", "ensuite_towel", "heating-core-s2/switch/ensuite_towel/set", "heating-core-s2/switch/ensuite_towel/state");
-  publishDiscoveryForSwitch("Rads Main Valve", "rads_main_valve", "heating-core-s2/switch/rads_main_valve/set", "heating-core-s2/switch/rads_main_valve/state");
-  publishDiscoveryForSwitch("UFH Pump", "ufh_pump", "heating-core-s2/switch/ufh_pump/set", "heating-core-s2/switch/ufh_pump/state");
+  // AUTO-only entities removed from command exposure
   publishDiscoveryForSwitch("Boiler", "boiler", "heating-core-s2/switch/boiler/set", "heating-core-s2/switch/boiler/state");
   publishDiscoveryForSwitch("24V Transformer", "transformer_24v", "heating-core-s2/switch/transformer_24v/set", "heating-core-s2/switch/transformer_24v/state");
 
-  // Number
-  publishDiscoveryForNumber();
+  // Numbers: expose Day/Night setpoints (Tank2 legacy removed)
+  publishDiscoveryForNumber(
+    "Day Setpoint",
+    "day_setpoint",
+    "heating-core-s2/number/day_setpoint/set",
+    "heating-core-s2/number/day_setpoint/state"
+  );
+  publishDiscoveryForNumber(
+    "Night Setpoint",
+    "night_setpoint",
+    "heating-core-s2/number/night_setpoint/set",
+    "heating-core-s2/number/night_setpoint/state"
+  );
 }
 
 void mqttPublishTemps() {
@@ -184,15 +192,15 @@ void mqttPublishSwitchStates() {
   publishSwitch("bathroom_rad", bathRadOn);
   publishSwitch("bathroom_towel", bathTowelOn);
   publishSwitch("ensuite_towel", ensuiteTowelOn);
-  publishSwitch("rads_main_valve", radsMainValveOn);
-  publishSwitch("ufh_pump", ufhPumpOn);
+  // Keep publishing state-only topics if you want read-only entities via templates, else remove
   publishSwitch("boiler", digitalRead(BOILER_RELAY_PIN)==LOW);
   publishSwitch("transformer_24v", transformer24VOn);
   publishSwitch("immersion", immersionOn);
 }
 
 void mqttPublishSetpoint() {
-  publishRetained("heating-core-s2/number/tank2_setpoint/state", String(TankSetpointC));
+  publishRetained("heating-core-s2/number/day_setpoint/state", String(daySetpointC));
+  publishRetained("heating-core-s2/number/night_setpoint/state", String(nightSetpointC));
 }
 
 void mqttPublishAllStates(bool includeTemps) {
@@ -202,10 +210,15 @@ void mqttPublishAllStates(bool includeTemps) {
 }
 
 // Message handler
-static void handleMessage(char* topic, char* payload, AsyncMqttClientMessageProperties, size_t len, size_t, size_t) {
+static void handleMessage(char* topic, char* payload, AsyncMqttClientMessageProperties props, size_t len, size_t, size_t) {
   String t(topic);
   String msg = String(payload).substring(0, len);
   bool turnOn = (msg == "ON" || msg == "on" || msg == "1");
+
+  // Ignore retained commands on "/set" topics to prevent overwriting local UI state on reconnect
+  if (props.retain && t.endsWith("/set")) {
+    return;
+  }
 
   auto applySwitch = [&](const char* key, bool &var) {
     if (t == String("heating-core-s2/switch/") + key + "/set") {
@@ -226,12 +239,7 @@ static void handleMessage(char* topic, char* payload, AsyncMqttClientMessageProp
   applySwitch("bathroom_towel", bathTowelOn);
   applySwitch("ensuite_towel", ensuiteTowelOn);
 
-  if (t == "heating-core-s2/switch/rads_main_valve/set") {
-    radsMainValveOn = turnOn;
-  }
-  if (t == "heating-core-s2/switch/ufh_pump/set") {
-    ufhPumpOn = turnOn;
-  }
+  // rads_main_valve and ufh_mech are AUTO-only; ignore direct set requests
   if (t == "heating-core-s2/switch/boiler/set") {
     digitalWrite(BOILER_RELAY_PIN, turnOn ? LOW : HIGH);
   }
@@ -242,9 +250,14 @@ static void handleMessage(char* topic, char* payload, AsyncMqttClientMessageProp
     immersionOn = turnOn;
     digitalWrite(IMMERSION_RELAY_PIN, immersionOn ? HIGH : LOW);
   }
-  if (t == "heating-core-s2/number/tank2_setpoint/set") {
-    TankSetpointC = msg.toFloat();
-    saveTankSetpoint();
+  if (t == "heating-core-s2/number/day_setpoint/set") {
+    daySetpointC = msg.toFloat();
+    saveSetpoints();
+    mqttPublishSetpoint();
+  }
+  if (t == "heating-core-s2/number/night_setpoint/set") {
+    nightSetpointC = msg.toFloat();
+    saveSetpoints();
     mqttPublishSetpoint();
   }
 }

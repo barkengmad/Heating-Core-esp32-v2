@@ -53,7 +53,18 @@ unsigned long ufhPumpRunOnStartMs = 0;
 unsigned long ufhPumpLastSwitchMs = 0;
 unsigned long radsAnyZoneOpenSinceMs = 0;
 unsigned long radsPumpRunOnStartMs = 0;
+unsigned long radsValveRunOnStartMs = 0;
 unsigned long radsPumpLastSwitchMs = 0;
+
+unsigned long radBasementOnSinceMs = 0;
+unsigned long radLoungeOnSinceMs = 0;
+unsigned long radFrontBedroomOnSinceMs = 0;
+unsigned long radBackBedroomOnSinceMs = 0;
+unsigned long radOfficeOnSinceMs = 0;
+unsigned long radMasterBedroomOnSinceMs = 0;
+unsigned long bathRadOnSinceMs = 0;
+unsigned long bathTowelOnSinceMs = 0;
+unsigned long ensuiteTowelOnSinceMs = 0;
 
 bool getCurrentTime(int &hour, int &minute) {
     struct tm timeinfo;

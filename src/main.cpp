@@ -116,6 +116,9 @@ int getMinuteFromParam(AsyncWebServerRequest *request, const String& paramName) 
 void setup() {
   // Set up the serial interface
   Serial.begin(115200);
+  delay(500);
+  Serial.println();
+  Serial.println("Heating System Core v2 booting...");
 
   // Preferences
   loadPreferences();
@@ -123,26 +126,59 @@ void setup() {
   // Set custom hostname
   WiFi.setHostname("Heating");
 
-  // Connect to WiFi
+  // Connect to WiFi (STA) and block until connected, printing a dot each second
+  WiFi.mode(WIFI_STA);
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  Serial.print("Connecting WiFi ");
   while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
     Serial.print(".");
+    delay(1000);
   }
   Serial.println("");
   Serial.print("Connected! IP address: ");
   Serial.println(WiFi.localIP());
+  Serial.print("Gateway: "); Serial.println(WiFi.gatewayIP());
+  Serial.print("DNS0: "); Serial.println(WiFi.dnsIP(0));
+  Serial.print("DNS1: "); Serial.println(WiFi.dnsIP(1));
 
-  // Set GMT time zone with daylight saving
-  configTime(0, 3600, "pool.ntp.org", "time.nist.gov"); // UTC offset, Daylight Offset, 1st ntp server, 1st ntp server
+  // Small delay then sync time (revert to previous working method) with fallbacks
+  delay(750);
+  // Apply UK TZ (GMT/BST)
+  setenv("TZ", "GMT0BST,M3.5.0/1,M10.5.0/2", 1);
+  tzset();
+
+  auto tryNtp = [&](const char* s1, const char* s2, const char* s3, uint32_t timeoutMs) -> bool {
+    Serial.print("Connecting to NTP "); Serial.print(s1); Serial.print(", "); Serial.print(s2);
+    Serial.println("");
+    configTime(0, 3600, s1, s2, s3);
+    struct tm timeinfo;
+    unsigned long start = millis();
+    unsigned long lastDot = start;
+    bool synced = getLocalTime(&timeinfo);
+    while (!synced && (millis() - start) < timeoutMs) {
+      if (millis() - lastDot >= 1000UL) { Serial.print("."); lastDot += 1000UL; }
+      delay(25);
+      synced = getLocalTime(&timeinfo);
+    }
+    Serial.println("");
+    if (synced) {
+      char buf[40];
+      strftime(buf, sizeof(buf), "%a %Y-%m-%d %H:%M:%S", &timeinfo);
+      Serial.print("Time synced: "); Serial.println(buf);
+      return true;
+    }
+    Serial.println("Time sync failed (NTP)");
+    return false;
+  };
+
+  // Prefer direct NIST IPs first (fastest, no DNS), then named servers as fallback
+  // Use DNS hosts: primary + backup
+  tryNtp("time.nist.gov", "pool.ntp.org", "", 30000);
 
 
 // Start the MDNS responder
 if (!MDNS.begin("heating")) { // So now will be hosted at heating.local
   Serial.println("Error setting up MDNS responder!");
-  while (1) {
-    delay(1000);
-  }
 } else {
   Serial.println("MDNS responder started for heating.local");
 }
@@ -161,10 +197,20 @@ server.on("/config", HTTP_GET, [](AsyncWebServerRequest *request){
   request->send(200, "text/html", WebPages::getConfigPageHtml());
 });
 
+// Toggle API
+server.on("/api/toggle", HTTP_POST, WebPages::handleToggleOutput);
+server.on("/api/toggle", HTTP_GET, WebPages::handleToggleOutput);
 
-  server.on("/update", HTTP_GET, [](AsyncWebServerRequest *request){
-    request->send(200, "text/html", serverIndex);
-  });
+
+// Firmware page
+server.on("/firmware", HTTP_GET, [](AsyncWebServerRequest *request){
+  request->send(200, "text/html", WebPages::getFirmwarePageHtml());
+});
+
+// Backward-compatible raw update form
+server.on("/update", HTTP_GET, [](AsyncWebServerRequest *request){
+  request->send(200, "text/html", WebPages::getFirmwarePageHtml());
+});
 
   server.on("/update", HTTP_POST, [](AsyncWebServerRequest *request){
     request->send(200, "text/plain", Update.hasError() ? "FAIL" : "Updated!");
@@ -205,12 +251,20 @@ server.on("/config", HTTP_GET, [](AsyncWebServerRequest *request){
 
 void loop() {
   
-  // Periodically sync the time with the NTP server
-    static unsigned long lastSyncTime = millis();
-    if (millis() - lastSyncTime > 3600000) { // every hour
-        // Re-sync time every 24 hours
-        configTime(0, 3600, "pool.ntp.org", "time.nist.gov");
-        lastSyncTime = millis();
+  // Daily refresh of NTP/timezone at an obscure time (03:17 local time)
+    static int lastSyncYday = -1; // day-of-year last synced
+    {
+      struct tm timeinfo;
+      if (getLocalTime(&timeinfo)) {
+        if (timeinfo.tm_hour == 3 && timeinfo.tm_min == 17) {
+          if (lastSyncYday != timeinfo.tm_yday) {
+            setenv("TZ", "GMT0BST,M3.5.0/1,M10.5.0/2", 1);
+            tzset();
+            configTime(0, 3600, "time.nist.gov", "pool.ntp.org");
+            lastSyncYday = timeinfo.tm_yday;
+          }
+        }
+      }
     }
 
 

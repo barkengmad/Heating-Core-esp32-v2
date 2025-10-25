@@ -58,7 +58,19 @@ extern unsigned long ufhPumpRunOnStartMs;
 extern unsigned long ufhPumpLastSwitchMs;
 extern unsigned long radsAnyZoneOpenSinceMs;
 extern unsigned long radsPumpRunOnStartMs;
+extern unsigned long radsValveRunOnStartMs; // run-on timer for main valve
 extern unsigned long radsPumpLastSwitchMs;
+
+// Per-zone warm-up timestamps (ms since boot), 0 means inactive
+extern unsigned long radBasementOnSinceMs;
+extern unsigned long radLoungeOnSinceMs;
+extern unsigned long radFrontBedroomOnSinceMs;
+extern unsigned long radBackBedroomOnSinceMs;
+extern unsigned long radOfficeOnSinceMs;
+extern unsigned long radMasterBedroomOnSinceMs;
+extern unsigned long bathRadOnSinceMs;
+extern unsigned long bathTowelOnSinceMs;
+extern unsigned long ensuiteTowelOnSinceMs;
 
 bool getCurrentTime(int &hour, int &minute);
 
