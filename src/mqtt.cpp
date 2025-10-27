@@ -159,6 +159,27 @@ void mqttPublishDiscovery() {
     "heating-core-s2/number/night_setpoint/set",
     "heating-core-s2/number/night_setpoint/state"
   );
+
+  // Source mode selection per window (select entities): Boiler / Immersion / None
+  auto publishDiscoveryForSelect = [&](const char* name, const char* unique, const char* cmd, const char* stat){
+    StaticJsonDocument<512> doc; char buf[512];
+    doc["name"] = name;
+    doc["uniq_id"] = unique;
+    doc["cmd_t"] = cmd;
+    doc["stat_t"] = stat;
+    JsonArray opts = doc["options"].to<JsonArray>();
+    opts.add("Boiler"); opts.add("Immersion"); opts.add("None");
+    doc["dev"]["ids"][0] = DEVICE_ID;
+    doc["dev"]["name"] = "Heating Core";
+    doc["dev"]["mf"] = "Custom";
+    doc["dev"]["mdl"] = "ESP32-S2";
+    doc["avty_t"] = STATUS_TOPIC;
+    size_t n = serializeJson(doc, buf, sizeof(buf));
+    String topic = String("homeassistant/select/") + DEVICE_ID + "/" + unique + "/config";
+    mqtt.publish(topic.c_str(), 1, true, buf, n);
+  };
+  publishDiscoveryForSelect("Day Source", "day_source", "heating-core-s2/select/day_source/set", "heating-core-s2/select/day_source/state");
+  publishDiscoveryForSelect("Night Source", "night_source", "heating-core-s2/select/night_source/set", "heating-core-s2/select/night_source/state");
 }
 
 void mqttPublishTemps() {
@@ -201,6 +222,12 @@ void mqttPublishSwitchStates() {
 void mqttPublishSetpoint() {
   publishRetained("heating-core-s2/number/day_setpoint/state", String(daySetpointC));
   publishRetained("heating-core-s2/number/night_setpoint/state", String(nightSetpointC));
+  auto pubSrc = [&](const char* topic, int mode){
+    const char* s = (mode==SOURCE_BOILER?"Boiler":(mode==SOURCE_IMMERSION?"Immersion":"None"));
+    publishRetained(topic, String(s));
+  };
+  pubSrc("heating-core-s2/select/day_source/state", daySourceMode);
+  pubSrc("heating-core-s2/select/night_source/state", nightSourceMode);
 }
 
 void mqttPublishAllStates(bool includeTemps) {
@@ -258,6 +285,16 @@ static void handleMessage(char* topic, char* payload, AsyncMqttClientMessageProp
   if (t == "heating-core-s2/number/night_setpoint/set") {
     nightSetpointC = msg.toFloat();
     saveSetpoints();
+    mqttPublishSetpoint();
+  }
+  if (t == "heating-core-s2/select/day_source/set") {
+    if (msg == "Boiler") daySourceMode = SOURCE_BOILER; else if (msg == "Immersion") daySourceMode = SOURCE_IMMERSION; else daySourceMode = SOURCE_NONE;
+    saveSourceModes();
+    mqttPublishSetpoint();
+  }
+  if (t == "heating-core-s2/select/night_source/set") {
+    if (msg == "Boiler") nightSourceMode = SOURCE_BOILER; else if (msg == "Immersion") nightSourceMode = SOURCE_IMMERSION; else nightSourceMode = SOURCE_NONE;
+    saveSourceModes();
     mqttPublishSetpoint();
   }
 }

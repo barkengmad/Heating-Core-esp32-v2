@@ -80,6 +80,7 @@ void loadPreferences();
 void saveTankSetpoint();
 void saveImmersionWindow();
 void saveSetpoints();
+void saveSourceModes();
 void saveDayWindow();
 
 // Day/Night windows and setpoints
@@ -93,9 +94,10 @@ extern int nightEndHour;
 extern int nightEndMinute;
 extern float nightSetpointC;
 extern float daySetpointC;
-// Day/Night heat source selection (true=Boiler, false=Immersion)
-extern bool daySourceBoiler;
-extern bool nightSourceBoiler;
+// Heat source modes
+enum HeatSourceMode { SOURCE_BOILER = 0, SOURCE_IMMERSION = 1, SOURCE_NONE = 2 };
+extern int daySourceMode;   // SOURCE_BOILER/SOURCE_IMMERSION/SOURCE_NONE
+extern int nightSourceMode; // SOURCE_BOILER/SOURCE_IMMERSION/SOURCE_NONE
 
 // Expose DallasTemperature bus and known sensor addresses
 extern DallasTemperature sensors;

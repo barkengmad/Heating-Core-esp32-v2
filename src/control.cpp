@@ -34,8 +34,9 @@ void controlBoiler() {
     float targetSp = activeIsDay ? daySetpointC : nightSetpointC;
     TankSetpointC = targetSp; // reflect active target
 
-    bool useBoiler = activeIsDay ? daySourceBoiler : nightSourceBoiler;
-    bool demandHeat = useBoiler && (Temps::Tank2 < (targetSp - HYSTERESIS_C));
+    int mode = activeIsDay ? daySourceMode : nightSourceMode;
+    bool useBoiler = (mode == SOURCE_BOILER);
+    bool demandHeat = (mode != SOURCE_NONE) && useBoiler && (Temps::Tank2 < (targetSp - HYSTERESIS_C));
     bool stopHeat = (Temps::Tank2 > (targetSp + HYSTERESIS_C));
 
     static bool boilerIsOn = false;
@@ -219,8 +220,9 @@ void controlImmersion() {
     else if (inDay && inNight) activeIsDay = true; // Day wins on overlap
 
     float targetSp = activeIsDay ? daySetpointC : nightSetpointC;
-    bool useImmersion = !(activeIsDay ? daySourceBoiler : nightSourceBoiler);
-    bool demandImm = useImmersion && (Temps::Tank2 < (targetSp - HYSTERESIS_C));
+    int mode2 = activeIsDay ? daySourceMode : nightSourceMode;
+    bool useImmersion = (mode2 == SOURCE_IMMERSION);
+    bool demandImm = (mode2 != SOURCE_NONE) && useImmersion && (Temps::Tank2 < (targetSp - HYSTERESIS_C));
     bool stopImm = (Temps::Tank2 > (targetSp + HYSTERESIS_C));
 
     static unsigned long immersionLastToggleMs = 0;

@@ -23,8 +23,8 @@ String getMainPageHtml() {
     // Time moved into header
 
     htmlContent += "<div class='card'><h2>Setpoints</h2>";
-    htmlContent += "<form action='/setThreshold' method='post'><div class='row'><div class='label'>Day Setpoint (°C)</div><input class='input' type='text' name='threshold' value='" + String(daySetpointC, 1) + "' inputmode='decimal' pattern='[0-9]*[\\.,]?[0-9]+'></div><div class='row'><div class='label'>Day Source</div><label><input type='radio' name='day_src' value='boiler' " + String(daySourceBoiler?"checked":"") + "> Boiler</label><label style='margin-left:12px'><input type='radio' name='day_src' value='immersion' " + String(!daySourceBoiler?"checked":"") + "> Immersion</label></div><div class='row'><div class='label'>Day Window</div><input type='time' name='d_start' value='" + String(dayStartHour<10?"0":"") + String(dayStartHour) + ":" + String(dayStartMinute<10?"0":"") + String(dayStartMinute) + "'> <span>to</span> <input type='time' name='d_end' value='" + String(dayEndHour<10?"0":"") + String(dayEndHour) + ":" + String(dayEndMinute<10?"0":"") + String(dayEndMinute) + "'></div><div class='row'><button class='btn' type='submit'>Save Day</button></div></form>";
-    htmlContent += "<form action='/setNightSetpoint' method='post'><div class='row'><div class='label'>Night Setpoint (°C)</div><input class='input' type='text' name='night' value='" + String(nightSetpointC, 1) + "' inputmode='decimal' pattern='[0-9]*[\\.,]?[0-9]+'></div><div class='row'><div class='label'>Night Source</div><label><input type='radio' name='night_src' value='boiler' " + String(nightSourceBoiler?"checked":"") + "> Boiler</label><label style='margin-left:12px'><input type='radio' name='night_src' value='immersion' " + String(!nightSourceBoiler?"checked":"") + "> Immersion</label></div><div class='row'><div class='label'>Night Window</div><input type='time' name='n_start' value='" + String(nightStartHour<10?"0":"") + String(nightStartHour) + ":" + String(nightStartMinute<10?"0":"") + String(nightStartMinute) + "'> <span>to</span> <input type='time' name='n_end' value='" + String(nightEndHour<10?"0":"") + String(nightEndHour) + ":" + String(nightEndMinute<10?"0":"") + String(nightEndMinute) + "'></div><div class='row'><button class='btn' type='submit'>Save Night</button></div></form>";
+    htmlContent += "<form action='/setThreshold' method='post'><div class='row'><div class='label'>Day Setpoint (°C)</div><input class='input' type='text' name='threshold' value='" + String(daySetpointC, 1) + "' inputmode='decimal' pattern='[0-9]*[\\.,]?[0-9]+'></div><div class='row'><div class='label'>Day Source</div><label><input type='radio' name='day_src' value='boiler' " + String(daySourceMode==SOURCE_BOILER?"checked":"") + "> Boiler</label><label style='margin-left:12px'><input type='radio' name='day_src' value='immersion' " + String(daySourceMode==SOURCE_IMMERSION?"checked":"") + "> Immersion</label><label style='margin-left:12px'><input type='radio' name='day_src' value='none' " + String(daySourceMode==SOURCE_NONE?"checked":"") + "> None</label></div><div class='row'><div class='label'>Day Window</div><input type='time' name='d_start' value='" + String(dayStartHour<10?"0":"") + String(dayStartHour) + ":" + String(dayStartMinute<10?"0":"") + String(dayStartMinute) + "'> <span>to</span> <input type='time' name='d_end' value='" + String(dayEndHour<10?"0":"") + String(dayEndHour) + ":" + String(dayEndMinute<10?"0":"") + String(dayEndMinute) + "'></div><div class='row'><button class='btn' type='submit'>Save Day</button></div></form>";
+    htmlContent += "<form action='/setNightSetpoint' method='post'><div class='row'><div class='label'>Night Setpoint (°C)</div><input class='input' type='text' name='night' value='" + String(nightSetpointC, 1) + "' inputmode='decimal' pattern='[0-9]*[\\.,]?[0-9]+'></div><div class='row'><div class='label'>Night Source</div><label><input type='radio' name='night_src' value='boiler' " + String(nightSourceMode==SOURCE_BOILER?"checked":"") + "> Boiler</label><label style='margin-left:12px'><input type='radio' name='night_src' value='immersion' " + String(nightSourceMode==SOURCE_IMMERSION?"checked":"") + "> Immersion</label><label style='margin-left:12px'><input type='radio' name='night_src' value='none' " + String(nightSourceMode==SOURCE_NONE?"checked":"") + "> None</label></div><div class='row'><div class='label'>Night Window</div><input type='time' name='n_start' value='" + String(nightStartHour<10?"0":"") + String(nightStartHour) + ":" + String(nightStartMinute<10?"0":"") + String(nightStartMinute) + "'> <span>to</span> <input type='time' name='n_end' value='" + String(nightEndHour<10?"0":"") + String(nightEndHour) + ":" + String(nightEndMinute<10?"0":"") + String(nightEndMinute) + "'></div><div class='row'><button class='btn' type='submit'>Save Night</button></div></form>";
     // Removed Night Window Enabled checkbox; superseded by source selection
     htmlContent += "</div>";
 
@@ -279,8 +279,8 @@ void handleSetThreshold(AsyncWebServerRequest *request) {
     }
     if (request->hasParam("day_src", true)) {
         String s = request->getParam("day_src", true)->value();
-        daySourceBoiler = (s == "boiler");
-        prefs.putBool("day_src_boiler", daySourceBoiler);
+        if (s == "boiler") daySourceMode = SOURCE_BOILER; else if (s == "immersion") daySourceMode = SOURCE_IMMERSION; else daySourceMode = SOURCE_NONE;
+        saveSourceModes();
     }
     if (request->hasParam("d_start", true) && request->hasParam("d_end", true)) {
         String s = request->getParam("d_start", true)->value();
@@ -304,8 +304,8 @@ void handleSetNightSetpoint(AsyncWebServerRequest *request) {
     }
     if (request->hasParam("night_src", true)) {
         String s = request->getParam("night_src", true)->value();
-        nightSourceBoiler = (s == "boiler");
-        prefs.putBool("night_src_boiler", nightSourceBoiler);
+        if (s == "boiler") nightSourceMode = SOURCE_BOILER; else if (s == "immersion") nightSourceMode = SOURCE_IMMERSION; else nightSourceMode = SOURCE_NONE;
+        saveSourceModes();
     }
     if (request->hasParam("n_start", true) && request->hasParam("n_end", true)) {
         String s = request->getParam("n_start", true)->value();

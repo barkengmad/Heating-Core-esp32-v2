@@ -148,9 +148,16 @@ void setup() {
   tzset();
 
   auto tryNtp = [&](const char* s1, const char* s2, const char* s3, uint32_t timeoutMs) -> bool {
-    Serial.print("Connecting to NTP "); Serial.print(s1); Serial.print(", "); Serial.print(s2);
+    Serial.print("Connecting to NTP "); Serial.print(s1); if (s2 && *s2) { Serial.print(", "); Serial.print(s2); }
     Serial.println("");
-    configTime(0, 3600, s1, s2, s3);
+    // Use timezone rules for UK (BST/GMT) so DST changes apply automatically
+    if (s3 && *s3) {
+      configTzTime("GMT0BST,M3.5.0/1,M10.5.0/2", s1, s2, s3);
+    } else if (s2 && *s2) {
+      configTzTime("GMT0BST,M3.5.0/1,M10.5.0/2", s1, s2);
+    } else {
+      configTzTime("GMT0BST,M3.5.0/1,M10.5.0/2", s1);
+    }
     struct tm timeinfo;
     unsigned long start = millis();
     unsigned long lastDot = start;
@@ -251,16 +258,14 @@ server.on("/update", HTTP_GET, [](AsyncWebServerRequest *request){
 
 void loop() {
   
-  // Daily refresh of NTP/timezone at an obscure time (03:17 local time)
+  // Daily refresh of NTP/timezone at an obscure time (03:17 local time) using configTzTime
     static int lastSyncYday = -1; // day-of-year last synced
     {
       struct tm timeinfo;
       if (getLocalTime(&timeinfo)) {
         if (timeinfo.tm_hour == 3 && timeinfo.tm_min == 17) {
           if (lastSyncYday != timeinfo.tm_yday) {
-            setenv("TZ", "GMT0BST,M3.5.0/1,M10.5.0/2", 1);
-            tzset();
-            configTime(0, 3600, "time.nist.gov", "pool.ntp.org");
+            configTzTime("GMT0BST,M3.5.0/1,M10.5.0/2", "time.nist.gov", "pool.ntp.org");
             lastSyncYday = timeinfo.tm_yday;
           }
         }

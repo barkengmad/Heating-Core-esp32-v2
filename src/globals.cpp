@@ -86,8 +86,8 @@ int dayEndHour = 23;
 int dayEndMinute = 59;
 float nightSetpointC = 50.0f;
 float daySetpointC = 45.0f;
-bool daySourceBoiler = true;  // Day default to boiler
-bool nightSourceBoiler = false; // Night default to immersion
+int daySourceMode = SOURCE_BOILER;
+int nightSourceMode = SOURCE_IMMERSION;
 
 void loadPreferences() {
     prefs.begin("heating", false);
@@ -103,8 +103,8 @@ void loadPreferences() {
     dayStartMinute = prefs.getInt("d_sm", 0);
     dayEndHour = prefs.getInt("d_eh", 23);
     dayEndMinute = prefs.getInt("d_em", 59);
-    daySourceBoiler = prefs.getBool("day_src_boiler", true);
-    nightSourceBoiler = prefs.getBool("night_src_boiler", false);
+    daySourceMode = prefs.getInt("day_src_mode", (int)SOURCE_BOILER);
+    nightSourceMode = prefs.getInt("night_src_mode", (int)SOURCE_IMMERSION);
 }
 
 void saveTankSetpoint() {
@@ -128,4 +128,9 @@ void saveDayWindow() {
 void saveSetpoints() {
     prefs.putFloat("day_sp", daySetpointC);
     prefs.putFloat("night_sp", nightSetpointC);
+}
+
+void saveSourceModes() {
+    prefs.putInt("day_src_mode", daySourceMode);
+    prefs.putInt("night_src_mode", nightSourceMode);
 }
